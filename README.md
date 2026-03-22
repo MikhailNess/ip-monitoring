@@ -14,78 +14,43 @@
 - Статический анализ: **RuboCop**
 - **Docker** / **Docker Compose** (приложение, БД, воркер, прогон тестов)
 
-## Требования для локального запуска
+## Требования
 
-- Ruby и Bundler
-- PostgreSQL 15+ (или только Docker — см. ниже)
-- Для воркера на хосте: утилита `ping` (в Debian/Ubuntu пакет `iputils-ping`)
+- [Docker](https://docs.docker.com/get-docker/) и [Docker Compose](https://docs.docker.com/compose/) v2
 
-## Быстрый старт: локально
+## Быстрый старт (Docker Compose)
+
+Склонируйте репозиторий (подставьте свой `OWNER` и при необходимости имя репозитория; URL — из **Code** на GitHub):
 
 ```bash
-git clone <url-репозитория> monitoring
+git clone https://github.com/OWNER/monitoring.git
 cd monitoring
 
-bundle install
-
-cp .env.example .env
-# Отредактируйте DATABASE_URL под свой PostgreSQL (хост, порт, пользователь, БД, пароль).
-```
-
-Поднимите PostgreSQL и создайте БД/пользователя, если их ещё нет. Пример строки подключения см. в `.env.example`.
-
-```bash
-bundle exec rake db:migrate
-
-bundle exec puma -b tcp://0.0.0.0:4567 config.ru
-```
-
-Сервер по умолчанию слушает порт **4567**. Корень `GET /` редиректит на **`/demo`** — статическую страницу (`public/demo.html` + `demo.css` / `demo.js`): формы и кнопки вызывают то же API через `fetch`, ответы показываются на странице. Это удобно для ручной проверки без терминала; для скриптов и CI по-прежнему уместны `curl` и другие клиенты.
-
-### Воркер пинга (отдельный терминал)
-
-Интервал и таймаут задаются переменными окружения (см. `.env.example`):
-
-- `CHECK_INTERVAL_SECONDS` — пауза между циклами обхода (по умолчанию задано `60`)
-- `PING_TIMEOUT_SECONDS` — таймаут одного пинга
-- `LOG_LEVEL` — уровень логов (`Logger`)
-
-```bash
-# из корня проекта, с тем же DATABASE_URL, что и у API
-bundle exec ruby workers/ping_worker.rb
-```
-
-## Быстрый старт: Docker Compose
-
-```bash
 docker compose up --build
 ```
 
-- **app** — API на порту `4567`, перед стартом entrypoint ждёт БД и выполняет `rake db:migrate` (только при `ROLE=app`).
-- **worker** — цикл пингов (`workers/ping_worker.rb`).
-- **db** — PostgreSQL 15 (данные в tmpfs, после перезапуска контейнера БД пустая).
+Сервисы:
 
-Прогон тестов в Compose (отдельный compose-файл):
+- **app** — API на хосте **4567** (`http://localhost:4567`). Перед стартом entrypoint ждёт БД и выполняет `rake db:migrate` (только при `ROLE=app`).
+- **worker** — цикл ICMP-пингов (`workers/ping_worker.rb`); интервал и таймаут задаются в `docker-compose.yml` (`CHECK_INTERVAL_SECONDS`, `PING_TIMEOUT_SECONDS`, `LOG_LEVEL` и др.).
+- **db** — PostgreSQL 15 (данные в tmpfs у сервиса `db`, после перезапуска контейнера БД пустая).
 
-```bash
-docker compose -f docker-compose.test.yml run --rm test
-```
+Корень `GET /` редиректит на **`/demo`** — статическую страницу (`public/demo.html` + `demo.css` / `demo.js`): формы дергают API через `fetch`. Для проверок из скриптов удобен `curl` к `http://localhost:4567`.
 
 ## Переменные окружения
 
-Обязательная для приложения и воркера: **`DATABASE_URL`**.
+В **docker-compose.yml** уже заданы строка подключения к БД, `ROLE`, `RACK_ENV` и параметры воркера. Менять удобно через `environment` у сервисов или через [env-файл Compose](https://docs.docker.com/compose/environment-variables/set-environment-variables/).
 
-Часто используемые (см. также `.env.example`):
+Ориентир по именам переменных (пример заполнения — `.env.example`):
 
 | Переменная | Назначение |
 |------------|------------|
-| `RACK_ENV` | `development` / `test` / `production` |
+| `DATABASE_URL` | подключение к PostgreSQL (обязательно для приложения и воркера) |
+| `RACK_ENV` | окружение приложения (`production` в образах из compose) |
 | `DB_POOL`, `DB_POOL_TIMEOUT` | пул подключений Sequel |
 | `CHECK_INTERVAL_SECONDS`, `PING_TIMEOUT_SECONDS` | воркер |
 | `LOG_NAMESPACE` | префикс в JSON-логах entrypoint |
-| `ROLE` | `app` или `worker` — влияет на прогон миграций в `entrypoint.sh` |
-
-В `development` подхватывается `.env` через `dotenv` (`config/environment.rb`).
+| `ROLE` | `app` или `worker` — у `app` после ожидания БД выполняются миграции (`entrypoint.sh`) |
 
 ## API (кратко)
 
@@ -103,11 +68,11 @@ docker compose -f docker-compose.test.yml run --rm test
 
 ## Сценарий использования
 
-Типичный проход «появились замеры → можно смотреть статистику». Его можно выполнить **в браузере** (`http://localhost:4567/demo` при локальном запуске или тот же путь на хосте при Docker) или **из терминала** — шаги ниже описывают поток на уровне API:
+Типичный проход «появились замеры → можно смотреть статистику». Его можно выполнить **в браузере** (`http://localhost:4567/demo` при поднятом `docker compose`) или **через `curl`** — шаги ниже на уровне API:
 
 1. **Создать IP и включить мониторинг** — либо сразу `enabled=true`, либо после создания вызвать `POST /ips/:id/enable`. Пока период мониторинга закрыт, воркер этот адрес не пингует.
-2. **Запустить воркер** — отдельный процесс (`bundle exec ruby workers/ping_worker.rb` или сервис `worker` в Docker Compose), с тем же `DATABASE_URL`, что и у API.
-3. **Подождать 1–2 цикла воркера** — длительность цикла задаётся `CHECK_INTERVAL_SECONDS` (в `docker-compose.yml` у `worker` по умолчанию 60 с; локально без Compose см. `.env` и дефолт в `workers/ping_worker.rb`). За это время в БД должны появиться строки в `ip_checks`.
+2. **Воркер** — при `docker compose up` уже запущен сервис `worker` (тот же `DATABASE_URL`, что у `app`).
+3. **Подождать 1–2 цикла воркера** — длительность цикла задаётся `CHECK_INTERVAL_SECONDS` в `docker-compose.yml` (по умолчанию 60 с). За это время в БД должны появиться строки в `ip_checks`.
 4. **Запросить статистику** — `GET /ips/:id/stats` с `time_from` и `time_to` в ISO8601 (UTC), чтобы окно перекрывало моменты проверок и активный период мониторинга. Если в выборке нет ни одной проверки, будет `422` (даже при «плохих» пингах статистика может вернуться с `loss_percent` и пустыми RTT).
 
 Пример (подставьте `id`; `time_from` / `time_to` — ISO8601 в UTC, интервал должен пересекаться с моментами проверок):
@@ -125,11 +90,10 @@ curl -sG "$BASE/ips/1/stats" \
 
 ## Тесты и CI
 
+Тесты в Docker (миграции и очистка таблиц — как в `spec/spec_helper.rb`):
+
 ```bash
-# Нужна доступная БД; RSpec сам применит миграции и перед каждым request-тестом очистит таблицы.
-export RACK_ENV=test
-export DATABASE_URL=postgres://user:pass@localhost:5432/monitoring_test
-bundle exec rspec
+docker compose -f docker-compose.test.yml run --rm test
 ```
 
 GitHub Actions (`.github/workflows/ci.yml`): на push/PR в ветку `main` последовательно запускаются **RuboCop** и **RSpec** с сервисом PostgreSQL 15.
