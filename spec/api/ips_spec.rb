@@ -12,7 +12,7 @@ RSpec.describe 'IPs API', type: :request do
   end
 
   describe 'POST /ips' do
-    it 'создаёт IP и возвращает 201' do
+    it 'creates an IP and returns 201' do
       post_create_ip(ip: '10.0.0.1', enabled: 'false')
 
       expect(last_response.status).to eq(201)
@@ -21,7 +21,7 @@ RSpec.describe 'IPs API', type: :request do
       expect(parsed_body['id']).to be_a(Integer)
     end
 
-    it 'возвращает 409 при дубликате активного IP' do
+    it 'returns 409 when the active IP already exists' do
       post_create_ip(ip: '10.0.0.2', enabled: 'false')
       expect(last_response.status).to eq(201)
 
@@ -30,7 +30,7 @@ RSpec.describe 'IPs API', type: :request do
       expect(parsed_body.dig('error', 'code')).to eq('CONFLICT')
     end
 
-    it 'после DELETE восстанавливает ту же запись по IP (тот же id)' do
+    it 'after DELETE recreates the same row by IP with the same id' do
       post_create_ip(ip: '10.0.0.8', enabled: 'false')
       id = parsed_body['id']
 
@@ -46,7 +46,7 @@ RSpec.describe 'IPs API', type: :request do
   end
 
   describe 'POST /ips/:id/enable' do
-    it 'открывает сбор статистики' do
+    it 'opens monitoring for stats collection' do
       post_create_ip(ip: '10.0.0.3', enabled: 'false')
       id = parsed_body['id']
 
@@ -60,11 +60,11 @@ RSpec.describe 'IPs API', type: :request do
   end
 
   describe 'GET /ips/:id/stats' do
-    it 'возвращает 422 если нет замеров в периоде' do
+    it 'returns 422 when there are no checks in the requested window' do
       post_create_ip(ip: '10.0.0.4', enabled: 'true')
       id = parsed_body['id']
 
-      # Окно в будущем: активный период есть, но замеров в окне нет
+      # Future window: activity period exists but no checks fall inside it
       from_future = Time.now.utc + 3600
       to_future = from_future + 3600
 
@@ -77,7 +77,7 @@ RSpec.describe 'IPs API', type: :request do
       expect(parsed_body.dig('error', 'code')).to eq('UNPROCESSABLE_ENTITY')
     end
 
-    it 'возвращает агрегаты при наличии успешных проверок' do
+    it 'returns aggregates when successful checks exist' do
       post_create_ip(ip: '10.0.0.5', enabled: 'true')
       id = parsed_body['id']
 
@@ -107,7 +107,7 @@ RSpec.describe 'IPs API', type: :request do
       expect(parsed_body['loss_percent']).to eq(0.0)
     end
 
-    it 'агрегирует замеры по объединению интервалов enable (пропуск disable между ними)' do
+    it 'aggregates checks across merged enable intervals (gap where monitoring was off)' do
       post_create_ip(ip: '10.0.0.51', enabled: 'false')
       id = parsed_body['id']
 
@@ -149,7 +149,7 @@ RSpec.describe 'IPs API', type: :request do
       expect(parsed_body['loss_percent']).to eq(0.0)
     end
 
-    it '422 если в объединенных интервалах активности нет ни одного замера' do
+    it 'returns 422 when merged activity intervals contain no checks' do
       post_create_ip(ip: '10.0.0.52', enabled: 'false')
       id = parsed_body['id']
 
@@ -184,7 +184,7 @@ RSpec.describe 'IPs API', type: :request do
   end
 
   describe 'DELETE /ips/:id' do
-    it 'удаляет IP и повторный DELETE даёт 404' do
+    it 'deletes the IP and a second DELETE returns 404' do
       post_create_ip(ip: '10.0.0.6', enabled: 'false')
       id = parsed_body['id']
 

@@ -6,12 +6,10 @@ require_relative '../base_service'
 
 module Services
   module IpChecks
-    # Один ICMP ping, запись результата в репозиторий. Таймаут задаётся timeout_seconds;
-    # процесс при необходимости убивается по монотонным часам (см. #wait_for_ping_exit).
     class PingCheckService < BaseService
       DEFAULT_TIMEOUT_SECONDS = 1.0
       RTT_MS_PATTERN = /time=([0-9.]+)\s*ms/i
-      POLL_INTERVAL = 0.01 # секунды между проверками waitpid
+      POLL_INTERVAL = 0.01
 
       def self.parse_rtt_ms(ping_output)
         ping_output[RTT_MS_PATTERN, 1]&.to_f
@@ -37,7 +35,6 @@ module Services
 
       private
 
-      # Возвращает [status для БД, rtt_ms или nil].
       def execute_ping(ip_string:)
         ip_address = IPAddr.new(ip_string)
         stdout_reader, stdout_writer = IO.pipe
@@ -66,14 +63,12 @@ module Services
 
       def ping_command_argv(ip_address:, target:)
         family_flag = ip_address.ipv6? ? %w[-6] : %w[-4]
-        # Минимум 1 с: флаг -W у ping; жёсткий предел — kill в wait_for_ping_exit.
+        # ping -W is at least 1s; hard cap is enforced via kill in wait_for_ping_exit.
         ping_builtin_wait_sec = [timeout_seconds.to_i, 1].max
 
         ['ping', *family_flag, '-c', '1', '-n', '-W', ping_builtin_wait_sec.to_s, target]
       end
 
-      # Дожидается завершения дочернего ping или шлёт KILL по истечении deadline_monotonic.
-      # Возвращает [был_ли_kill_по_таймауту, Process::Status].
       def wait_for_ping_exit(pid:, deadline_monotonic:, stdout_writer:, stderr_writer:)
         killed_after_deadline = false
         process_status = nil

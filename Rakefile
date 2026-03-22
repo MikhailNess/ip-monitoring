@@ -21,5 +21,5 @@ begin
   require 'rspec/core/rake_task'
   RSpec::Core::RakeTask.new(:spec)
 rescue LoadError
-  # rspec только в development/test
+  # rspec is only available in development/test
 end

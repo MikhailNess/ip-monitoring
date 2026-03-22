@@ -1,25 +1,25 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Мониторинг IP — демо</title>
+  <title>IP monitoring — demo</title>
   <link rel="stylesheet" href="/demo.css" />
 </head>
 <body>
-  <h1>Мониторинг IP — демо API</h1>
+  <h1>IP monitoring — API demo</h1>
   <p class="hint">
-    Запросы через <code>fetch</code>; ответ JSON пишется в блок ниже (как у API, не редирект страницы).
+    Requests use <code>fetch</code>; the JSON response is printed below (API-style, no full-page redirect).
   </p>
 
   <fieldset>
-    <legend>Создать IP</legend>
+    <legend>Create IP</legend>
     <form id="formCreate">
-      <label for="f-ip">Адрес (IPv4 / IPv6)</label>
+      <label for="f-ip">Address (IPv4 / IPv6)</label>
       <input id="f-ip" name="ip" type="text" value="127.0.0.1" required autocomplete="off" />
       <input type="hidden" name="enabled" value="false" />
       <div class="row">
-        <label><input type="checkbox" id="f-enabled-cb" /> Включить мониторинг сразу</label>
+        <label><input type="checkbox" id="f-enabled-cb" /> Enable monitoring immediately</label>
       </div>
       <div class="row">
         <button type="submit">POST /ips</button>
@@ -28,9 +28,9 @@
   </fieldset>
 
   <fieldset>
-    <legend>Операции по id</legend>
-    <label for="ipId">id записи</label>
-    <input id="ipId" type="number" min="1" step="1" placeholder="после создания подставится автоматически" />
+    <legend>Operations by id</legend>
+    <label for="ipId">Record id</label>
+    <input id="ipId" type="number" min="1" step="1" placeholder="filled automatically after create" />
     <div class="row">
       <button type="button" id="btnEnable">POST …/enable</button>
       <button type="button" id="btnDisable">POST …/disable</button>
@@ -39,8 +39,8 @@
   </fieldset>
 
   <fieldset>
-    <legend>Статистика</legend>
-    <label for="timeFrom">time_from (локальное время → уходит как ISO8601 UTC)</label>
+    <legend>Statistics</legend>
+    <label for="timeFrom">time_from (local time, sent as ISO8601 UTC)</label>
     <input id="timeFrom" type="datetime-local" />
     <label for="timeTo">time_to</label>
     <input id="timeTo" type="datetime-local" />

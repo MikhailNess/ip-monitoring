@@ -16,7 +16,7 @@
 
     const res = await fetch(url, next);
     const text = await res.text();
-    let pretty = '(пусто)';
+    let pretty = '(empty)';
     if (text) {
       try {
         pretty = JSON.stringify(JSON.parse(text), null, 2);
@@ -40,7 +40,7 @@
     const raw = document.getElementById('ipId').value.trim();
     const id = parseInt(raw, 10);
     if (!raw || !Number.isFinite(id) || id < 1) {
-      window.alert('Укажите положительный числовой id.');
+      window.alert('Enter a positive numeric id.');
       return null;
     }
     return id;
@@ -76,7 +76,7 @@
         document.getElementById('ipId').value = String(data.id);
       }
     } catch {
-      /* не JSON */
+      // response was not JSON
     }
   });
 
@@ -102,7 +102,7 @@
     const timeFrom = document.getElementById('timeFrom').value;
     const timeTo = document.getElementById('timeTo').value;
     if (!timeFrom || !timeTo) {
-      window.alert('Заполните time_from и time_to.');
+      window.alert('Fill in time_from and time_to.');
       return;
     }
 
@@ -114,5 +114,5 @@
   });
 
   setDefaultStatsRange();
-  log('Готово. Создайте IP или укажите существующий id.');
+  log('Ready. Create an IP or enter an existing id.');
 })();

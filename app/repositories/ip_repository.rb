@@ -54,8 +54,6 @@ module Repositories
       ds.first
     end
 
-    # Блокирует строку ips до конца транзакции (FOR UPDATE).
-    # Сериализует enable/disable/delete и открытие периода для одного IP.
     def find_ip_for_update(id:, include_deleted: false)
       ds = @db[:ips].where(id: id)
       ds = ds.where(deleted_at: nil) unless include_deleted

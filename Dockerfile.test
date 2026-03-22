@@ -1,4 +1,4 @@
-# Образ только для CI/тестов (все группы Gemfile, включая test).
+# Image for CI/tests only (all Gemfile groups, including test).
 FROM ruby:3.2.6-slim
 
 RUN apt-get update \

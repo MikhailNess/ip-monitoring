@@ -20,7 +20,6 @@ Sequel.migration do
     add_index :ip_activity_periods, %i[ip_id ended_at]
     add_index :ip_activity_periods, :started_at
 
-    # Инвариант: у одного IP не может быть больше одного открытого периода
     run <<~SQL
       CREATE UNIQUE INDEX index_ip_activity_periods_on_ip_id_open
       ON ip_activity_periods (ip_id)
