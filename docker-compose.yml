@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: monitoring-db
+    environment:
+      POSTGRES_DB: monitoring
+      POSTGRES_USER: monitoring
+      POSTGRES_PASSWORD: monitoring_password
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U monitoring -d monitoring"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  app:
+    build: .
+    container_name: monitoring-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://monitoring:monitoring_password@db:5432/monitoring
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: monitoring
+      DB_NAME: monitoring
+      RACK_ENV: production
+      LOG_NAMESPACE: ip_monitoring
+      ROLE: app
+    ports:
+      - "4567:4567"
+    command: ["bundle", "exec", "puma", "-b", "tcp://0.0.0.0:4567", "config.ru"]
+
+  spec:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://monitoring:monitoring_password@db:5432/monitoring
+      RACK_ENV: test
+    command: ["bundle", "exec", "rspec"]
+
+  worker:
+    build: .
+    container_name: monitoring-worker
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://monitoring:monitoring_password@db:5432/monitoring
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: monitoring
+      DB_NAME: monitoring
+      RACK_ENV: production
+      LOG_NAMESPACE: ip_monitoring
+      ROLE: worker
+      CHECK_INTERVAL_SECONDS: "60" # 60 seconds in task
+    command: ["bundle", "exec", "ruby", "workers/ping_worker.rb"]
+    restart: unless-stopped
+

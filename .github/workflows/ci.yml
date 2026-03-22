@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  rspec:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: monitoring
+          POSTGRES_PASSWORD: monitoring_test
+          POSTGRES_DB: monitoring_test
+        options: >-
+          --health-cmd "pg_isready -U monitoring -d monitoring_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      RACK_ENV: test
+      DATABASE_URL: postgres://monitoring:monitoring_test@127.0.0.1:5432/monitoring_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: RuboCop
+        run: bundle exec rubocop
+
+      - name: RSpec
+        run: bundle exec rspec

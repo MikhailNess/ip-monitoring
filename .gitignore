@@ -1,0 +1,12 @@
+/.env
+/.env.local
+/.env.*.local
+
+/vendor/bundle
+/.bundle
+
+/tmp
+/log
+*.log
+
+/coverage
