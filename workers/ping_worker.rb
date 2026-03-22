@@ -7,7 +7,7 @@ require 'logger'
 require_relative '../app/repositories/ip_repository'
 require_relative '../app/services/ip_checks/ping_check_service'
 
-interval_seconds = Integer(ENV.fetch('CHECK_INTERVAL_SECONDS', '5'))
+interval_seconds = Integer(ENV.fetch('CHECK_INTERVAL_SECONDS', '60'))
 timeout_seconds = Float(ENV.fetch('PING_TIMEOUT_SECONDS', '1'))
 
 repo = Repositories::IpRepository.new(db: DB)

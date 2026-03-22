@@ -36,7 +36,11 @@ module Api
       set :public_folder, File.expand_path('../../public', __dir__)
     end
 
-    get('/') { redirect '/demo.html' }
+    get('/') { redirect '/demo' }
+
+    get '/demo' do
+      send_file File.join(settings.public_folder, 'demo.html')
+    end
 
     before do
       p = request.path_info
