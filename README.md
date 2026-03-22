@@ -26,6 +26,9 @@
 git clone https://github.com/OWNER/monitoring.git
 cd monitoring
 
+cp .env.example .env
+# Задайте в .env свой POSTGRES_PASSWORD (и при необходимости обновите DATABASE_URL для локального запуска).
+
 docker compose up --build
 ```
 
@@ -39,7 +42,7 @@ docker compose up --build
 
 ## Переменные окружения
 
-В **docker-compose.yml** уже заданы строка подключения к БД, `ROLE`, `RACK_ENV` и параметры воркера. Менять удобно через `environment` у сервисов или через [env-файл Compose](https://docs.docker.com/compose/environment-variables/set-environment-variables/).
+Пароль и имя БД для сервиса `db` задаются через **`.env`** в корне проекта (шаблон — `.env.example`, файл `.env` не коммитится). В **docker-compose.yml** подставляются переменные окружения, плюс `ROLE`, `RACK_ENV` и параметры воркера. Дополнительно можно переопределять значения через `environment` у сервисов или [env-файл Compose](https://docs.docker.com/compose/environment-variables/set-environment-variables/).
 
 Ориентир по именам переменных (пример заполнения — `.env.example`):
 

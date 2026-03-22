@@ -31,7 +31,7 @@ jobs:
           - 5432:5432
         env:
           POSTGRES_USER: monitoring
-          POSTGRES_PASSWORD: monitoring_test
+          POSTGRES_PASSWORD: test
           POSTGRES_DB: monitoring_test
         options: >-
           --health-cmd "pg_isready -U monitoring -d monitoring_test"
@@ -41,7 +41,7 @@ jobs:
 
     env:
       RACK_ENV: test
-      DATABASE_URL: postgres://monitoring:monitoring_test@127.0.0.1:5432/monitoring_test
+      DATABASE_URL: postgres://monitoring:test@127.0.0.1:5432/monitoring_test
 
     steps:
       - uses: actions/checkout@v4

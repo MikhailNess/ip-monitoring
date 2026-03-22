@@ -5,13 +5,13 @@ services:
     image: postgres:15
     container_name: monitoring-db
     environment:
-      POSTGRES_DB: monitoring
-      POSTGRES_USER: monitoring
-      POSTGRES_PASSWORD: monitoring_password
+      POSTGRES_DB: ${POSTGRES_DB:-monitoring}
+      POSTGRES_USER: ${POSTGRES_USER:-monitoring}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (copy from .env.example)}
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U monitoring -d monitoring"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-monitoring} -d ${POSTGRES_DB:-monitoring}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -24,11 +24,11 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://monitoring:monitoring_password@db:5432/monitoring
+      DATABASE_URL: postgres://${POSTGRES_USER:-monitoring}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-monitoring}
       DB_HOST: db
       DB_PORT: 5432
-      DB_USER: monitoring
-      DB_NAME: monitoring
+      DB_USER: ${POSTGRES_USER:-monitoring}
+      DB_NAME: ${POSTGRES_DB:-monitoring}
       RACK_ENV: production
       LOG_NAMESPACE: ip_monitoring
       ROLE: app
@@ -44,7 +44,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://monitoring:monitoring_password@db:5432/monitoring
+      DATABASE_URL: postgres://${POSTGRES_USER:-monitoring}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-monitoring}
       RACK_ENV: test
     command: ["bundle", "exec", "rspec"]
 
@@ -55,11 +55,11 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://monitoring:monitoring_password@db:5432/monitoring
+      DATABASE_URL: postgres://${POSTGRES_USER:-monitoring}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-monitoring}
       DB_HOST: db
       DB_PORT: 5432
-      DB_USER: monitoring
-      DB_NAME: monitoring
+      DB_USER: ${POSTGRES_USER:-monitoring}
+      DB_NAME: ${POSTGRES_DB:-monitoring}
       RACK_ENV: production
       LOG_NAMESPACE: ip_monitoring
       ROLE: worker

@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: monitoring_test
       POSTGRES_USER: monitoring
-      POSTGRES_PASSWORD: monitoring_test
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD:-test}
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck:
@@ -22,6 +22,6 @@ services:
         condition: service_healthy
     environment:
       RACK_ENV: test
-      DATABASE_URL: postgres://monitoring:monitoring_test@db-test:5432/monitoring_test
+      DATABASE_URL: postgres://monitoring:${POSTGRES_TEST_PASSWORD:-test}@db-test:5432/monitoring_test
     entrypoint: ["bundle", "exec"]
     command: ["rspec"]
